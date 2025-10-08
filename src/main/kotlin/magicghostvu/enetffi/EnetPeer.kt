@@ -49,7 +49,7 @@ class EnetPeer internal constructor(
         } else {
 
             // allocate new heap buffer
-            val newBuffer = ByteBuffer.allocateDirect(data.limit())
+            val newBuffer = ByteBuffer.allocate(data.limit())
             // do copy
             newBuffer.put(data)
 
