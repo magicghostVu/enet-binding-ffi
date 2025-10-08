@@ -6,7 +6,6 @@ import java.io.File
 import java.lang.foreign.Arena
 import java.lang.foreign.FunctionDescriptor
 import java.lang.foreign.Linker
-import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.SymbolLookup
 import java.lang.foreign.ValueLayout
@@ -50,17 +49,18 @@ object Enet {
 
     private val funcEnetPeerSend: MethodHandle
 
+    private val funcHostConnect: MethodHandle
+
 
     private const val NUM_MAX_CLIENTS = 4095u
     private const val NUM_MAX_CHANNEL_PER_CLIENTS = 255u
-
-    // 32 byte
-    private const val SIZE_ENET_EVENT = 32L
 
 
     internal val logger: Logger = LoggerFactory.getLogger("enet")
 
     init {
+
+        // todo: maybe move to resource
         val filePath = File("enet_dll/enet_1.3.17.dll")
         System.load(filePath.absolutePath);
         // load some function
@@ -177,6 +177,18 @@ object Enet {
                 ValueLayout.ADDRESS,
             )
         )
+
+        val funcHostConnectAdd = libLookup.find("enet_host_connect").orElseThrow()
+        funcHostConnect = nativeLinker.downcallHandle(
+            funcHostConnectAdd,
+            FunctionDescriptor.of(
+                ValueLayout.ADDRESS,
+                ValueLayout.ADDRESS,
+                ValueLayout.ADDRESS,
+                ValueLayout.JAVA_LONG,
+                ValueLayout.JAVA_INT,
+            )
+        )
     }
 
 
@@ -195,7 +207,7 @@ object Enet {
         maxNumChannelPerClient: UInt,
         incomingBandwidthBytesPerSecond: UInt,
         outgoingBandwidthBytesPerSecond: UInt
-    ): EnetHost? {
+    ): EnetServerHost? {
 
         if (maxNumClient > NUM_MAX_CLIENTS) {
             throw IllegalArgumentException("maxNumClient (value $maxNumClient) > $NUM_MAX_CLIENTS")
@@ -226,7 +238,7 @@ object Enet {
             ) as MemorySegment
         }
         return if (enetHostAddress == MemorySegment.NULL) null
-        else EnetHost(enetHostAddress);
+        else EnetServerHost(enetHostAddress);
     }
 
     internal fun destroyHost(host: EnetHost) {
@@ -239,6 +251,56 @@ object Enet {
 
     internal fun freeEnetEvent(pointerEnetEvent: MemorySegment) {
         funEnetFree.invokeExact(pointerEnetEvent)
+    }
+
+    fun createClientHost(
+        numChannel: UByte,
+        targetConnect: InetSocketAddress,
+        maxBandwidthInBytePerSecond: UInt,
+        maxBandwidthOutBytePerSecond: UInt,
+        dataConnect: Int
+    ): EnetClientHost? {
+
+        if (numChannel > NUM_MAX_CHANNEL_PER_CLIENTS) {
+            throw IllegalArgumentException("num channel can not bigger than $NUM_MAX_CHANNEL_PER_CLIENTS")
+        }
+        val clientHostAdd = funcCreateHost.invokeExact(
+            MemorySegment.NULL,
+            1L,
+            numChannel.toLong(),
+            maxBandwidthInBytePerSecond.toInt(),
+            maxBandwidthOutBytePerSecond.toInt()
+        ) as MemorySegment
+
+        return if (clientHostAdd == MemorySegment.NULL) null
+        else {
+            // call host connect
+            val arena = Arena.ofConfined()
+            val serverPeerAllocated = arena.use {
+                val addressToConnectPointer = it.allocate(EnetStructLayout.structEnetAddress.layout)
+                val cStringHost = it.allocateFrom(targetConnect.hostName, StandardCharsets.UTF_8)
+                funcSetHostAddress.invokeExact(addressToConnectPointer, cStringHost)
+                EnetStructLayout.structEnetAddress.handlePort.set(
+                    addressToConnectPointer, 0, targetConnect.port.toShort(),
+                )
+                funcHostConnect.invokeExact(
+                    clientHostAdd,
+                    addressToConnectPointer,
+                    numChannel.toLong(),
+                    dataConnect
+                ) as MemorySegment
+            }
+
+            return if (serverPeerAllocated == MemorySegment.NULL) {
+                funcDestroyHost.invokeExact(clientHostAdd)
+                null
+            } else {
+                EnetClientHost(
+                    clientHostAdd,
+                    EnetPeer(serverPeerAllocated)
+                )
+            }
+        }
     }
 
 
@@ -322,7 +384,7 @@ object Enet {
                 // convert to read mode
                 heapBuffer.flip()
 
-                //todo: destroy native packet
+                //todo: destroy native packet to free memory
                 funcDestroyEnetPacket.invokeExact(nativeEnetPacketAddress) as Unit
 
                 ReceivePacketEvent(

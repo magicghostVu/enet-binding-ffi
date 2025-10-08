@@ -1,6 +1,7 @@
 package magicghostvu.enetffi
 
 import java.lang.foreign.MemorySegment
+import java.nio.ByteBuffer
 
 
 // make this class can be a key of a hash map
@@ -33,6 +34,31 @@ class EnetPeer internal constructor(
             flagsUpdate,
             channelId,
         )
+    }
+
+
+    // assume data buffer is already in read mode
+    fun sendData(data: ByteBuffer, flags: Int, channelId: UByte): Int {
+        // not send if empty
+        if (data.limit() == 0) {
+            throw IllegalArgumentException("can not send empty data")
+        }
+
+        val bufferToWrapArray: ByteBuffer = if (data.hasArray()) {
+            data
+        } else {
+
+            // allocate new heap buffer
+            val newBuffer = ByteBuffer.allocateDirect(data.limit())
+            // do copy
+            newBuffer.put(data)
+
+            //convert to read mode
+            newBuffer.flip()
+            newBuffer
+        }
+        val dataLen = bufferToWrapArray.limit() - bufferToWrapArray.position()
+        return sendData(bufferToWrapArray.array(), bufferToWrapArray.position(), dataLen, flags, channelId)
     }
 
     // todo: maybe add some function get host, port...

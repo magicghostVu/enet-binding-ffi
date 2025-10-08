@@ -2,12 +2,11 @@ package magicghostvu.enetffi
 
 import java.lang.foreign.MemorySegment
 
-// maybe value type
-class EnetHost internal constructor(internal val hostAddress: MemorySegment) {
+sealed class EnetHost {
+    internal abstract val hostAddress: MemorySegment
+    internal abstract val reuseEventPointer: MemorySegment
 
-    private var destroyed = false
-
-    internal val reuseEventPointer: MemorySegment = Enet.createEnetEvent();
+    protected var destroyed = false
 
     fun destroy() {
         if (!destroyed) {
@@ -19,9 +18,9 @@ class EnetHost internal constructor(internal val hostAddress: MemorySegment) {
 
     fun update(maxDelayMs: UInt): EnetEvent {
         if (destroyed) {
+            // or throw exception???
             return NoneEvent
         }
         return Enet.hostService(this, maxDelayMs)
     }
-
 }
