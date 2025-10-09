@@ -50,14 +50,16 @@ fun main() {
 
             NoneEvent -> {}
             is ReceivePacketEvent -> {
-                val buffer = e.data
-                logger.info("server received a packet size data is {}", buffer.limit())
-
-                val long = buffer.getLong()
-                val int = buffer.getInt()
-
-                logger.info("server received a packet data long {}, int {}", long, int)
-
+                val clientId = allClient[e.peer]
+                if (clientId != null) {
+                    val buffer = e.data
+                    logger.info("server received a packet from client {} size data is {}", clientId, buffer.limit())
+                    val long = buffer.getLong()
+                    val int = buffer.getInt()
+                    logger.info("server received a packet data long {}, int {}", long, int)
+                } else {
+                    logger.warn("client not connect before but send packet???")
+                }
             }
         }
     }
