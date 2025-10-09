@@ -11,16 +11,10 @@ fun main() {
     logger.info("res init enet is {}", resInit)
 
 
-    val buffer = ByteBuffer.allocate(1000)
-
-    buffer.putLong(10L)
-    buffer.flip()
-
     // cap là số được allocate từ đầu
     // limit chính là write index
     // position là read index
 
-    logger.info("cap {}, limit {}, position {}", buffer.capacity(), buffer.limit(), buffer.position())
 
     /*val enetHost = Enet.createServerHost(
         InetSocketAddress(8907),
@@ -31,7 +25,7 @@ fun main() {
     )*/
     val enetHost = Enet.createClientHost(
         32u,
-        InetSocketAddress("localhost", 7888),
+        InetSocketAddress("localhost", 9000),
         0u,
         0u,
         10

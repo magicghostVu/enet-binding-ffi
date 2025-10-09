@@ -1,7 +1,9 @@
 package magicghostvu.enetffi
 
 import java.lang.foreign.MemoryLayout
+import java.lang.foreign.StructLayout
 import java.lang.foreign.ValueLayout
+import java.lang.invoke.VarHandle
 
 object EnetStructLayout {
     val structEnetEvent = StructEnetEvent
@@ -10,7 +12,7 @@ object EnetStructLayout {
 }
 
 object StructEnetEvent {
-    val layout = MemoryLayout.structLayout(
+    val layout: StructLayout = MemoryLayout.structLayout(
         ValueLayout.JAVA_INT.withName("type"),
         MemoryLayout.paddingLayout(4),
         ValueLayout.ADDRESS.withName("peer"),
@@ -22,29 +24,29 @@ object StructEnetEvent {
 
     val byteSize: Long = layout.byteSize()
 
-    val handleGetData = layout.varHandle(
+    val handleGetData: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("data"),
     )
 
-    val handleGetPeerAddress = layout.varHandle(
+    val handleGetPeerAddress: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("peer"),
     )
 
-    val varHandleReadType = layout.varHandle(
+    val varHandleReadType: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("type"),
     )
 
-    val handleGetChannelId = layout.varHandle(
+    val handleGetChannelId: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("channelID"),
     )
 
-    val handleGetPacketAddress = layout.varHandle(
+    val handleGetPacketAddress: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("packet"),
     )
 }
 
 object StructEnetPacket {
-    val layout = MemoryLayout.structLayout(
+    val layout: StructLayout = MemoryLayout.structLayout(
         ValueLayout.JAVA_LONG.withName("referenceCount"),
         ValueLayout.JAVA_INT.withName("flags"),
         MemoryLayout.paddingLayout(4),
@@ -56,27 +58,27 @@ object StructEnetPacket {
 
     val byteSize: Long = layout.byteSize()
 
-    val packetFlagsHandle = layout.varHandle(
+    val packetFlagsHandle: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("flags"),
     )
 
-    val dataLengthHandle = layout.varHandle(
+    val dataLengthHandle: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("dataLength"),
     )
 
-    val nativeDataBufferHandle = layout.varHandle(
+    val nativeDataBufferHandle: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("data"),
     )
 }
 
-object StructEnetAddress{
-    val layout = MemoryLayout.structLayout(
+object StructEnetAddress {
+    val layout: StructLayout = MemoryLayout.structLayout(
         ValueLayout.JAVA_INT.withName("host"),
         ValueLayout.JAVA_SHORT.withName("port"),
         MemoryLayout.paddingLayout(2),
     )
 
-    val handlePort = layout.varHandle(
+    val handlePort: VarHandle = layout.varHandle(
         MemoryLayout.PathElement.groupElement("port")
     )
 }
