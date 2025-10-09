@@ -18,6 +18,22 @@ class EnetPeer internal constructor(
         }
     }
 
+    //request disconnect, gói tin (tin cậy) đang gửi dở sẽ được gửi xong
+    // rồi mới disconnect
+    // các gói tin trong queue chưa gửi sẽ bị discard
+    // sẽ nhận được sự kiện disconnect cho peer này
+    // sau khi gọi sẽ không thể gửi gói tin qua peer này được nữa (sẽ không được enqueue)
+    fun requestDisconnect(data: Int) {
+        Enet.disconnectPeer(this, data)
+    }
+
+    // sẽ disconnect khi tất cả queue được gửi hết
+    // sau khi gọi sẽ không thể gửi gói tin qua peer này được nữa
+    // (sẽ không được enqueue)
+    fun requestPeerDisconnectLater(data: Int) {
+        Enet.disconnectPeerLater(this, data)
+    }
+
     override fun hashCode(): Int {
         return nativeAddress.address().toInt()
     }
@@ -60,6 +76,5 @@ class EnetPeer internal constructor(
         val dataLen = bufferToWrapArray.limit() - bufferToWrapArray.position()
         return sendData(bufferToWrapArray.array(), bufferToWrapArray.position(), dataLen, flags, channelId)
     }
-
     // todo: maybe add some function get host, port...
 }

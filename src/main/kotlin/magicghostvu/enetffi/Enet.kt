@@ -52,6 +52,11 @@ object Enet {
     private val funcHostConnect: MethodHandle
 
 
+    private val funcDisconnectPeer: MethodHandle
+
+    private val funcDisconnectPeerLater: MethodHandle
+
+
     private const val NUM_MAX_CLIENTS = 4095u
     private const val NUM_MAX_CHANNEL_PER_CLIENTS = 255u
 
@@ -189,6 +194,26 @@ object Enet {
                 ValueLayout.JAVA_INT,
             )
         )
+
+        val funcDisconnectPeerAdd = libLookup.find("enet_peer_disconnect").orElseThrow()
+        funcDisconnectPeer = nativeLinker.downcallHandle(
+            funcDisconnectPeerAdd,
+            FunctionDescriptor.ofVoid(
+                ValueLayout.ADDRESS,
+                ValueLayout.JAVA_INT
+            )
+        )
+
+        val funcDisconnectPeerLaterAdd = libLookup.find("enet_peer_disconnect_later").orElseThrow()
+
+        funcDisconnectPeerLater = nativeLinker.downcallHandle(
+            funcDisconnectPeerLaterAdd,
+            FunctionDescriptor.ofVoid(
+                ValueLayout.ADDRESS,
+                ValueLayout.JAVA_INT,
+            )
+        )
+
     }
 
 
@@ -395,6 +420,15 @@ object Enet {
                 )
             }
         }
+    }
+
+
+    internal fun disconnectPeer(enetPeer: EnetPeer, data: Int) {
+        funcDisconnectPeer.invokeExact(enetPeer.nativeAddress, data)
+    }
+
+    internal fun disconnectPeerLater(enetPeer: EnetPeer, data: Int) {
+        funcDisconnectPeerLater.invokeExact(enetPeer.nativeAddress, data)
     }
 
     // netty buffer and jdk bytebuffer friendly

@@ -26,6 +26,7 @@ fun main() {
 
     while (true) {
         when (val e = serverHost.update(1u)) {
+            NoneEvent -> {}
             is ConnectEvent -> {
                 logger.info("a client connected with data {}", e.dataConnect)
                 val existingClientId = allClient[e.peerConnect]
@@ -47,8 +48,6 @@ fun main() {
                 }
 
             }
-
-            NoneEvent -> {}
             is ReceivePacketEvent -> {
                 val clientId = allClient[e.peer]
                 if (clientId != null) {
