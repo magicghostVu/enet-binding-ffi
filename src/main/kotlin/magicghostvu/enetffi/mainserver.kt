@@ -21,14 +21,31 @@ fun main() {
         return
     }
 
+    var clientId = 0;
+    val allClient = mutableMapOf<EnetPeer, Int>()
+
     while (true) {
         when (val e = serverHost.update(1u)) {
             is ConnectEvent -> {
                 logger.info("a client connected with data {}", e.dataConnect)
+                val existingClientId = allClient[e.peerConnect]
+                if (existingClientId != null) {
+                    logger.warn("impossible, client connect but had already in map???")
+                } else {
+                    val newClientId = clientId;
+                    allClient[e.peerConnect] = newClientId;
+                    clientId++;
+                }
             }
 
             is DisconnectEvent -> {
-                logger.info("a client disconnected ")
+                val id = allClient.remove(e.peerDisconnect)
+                if (id != null) {
+                    logger.info("client {} disconnected", id)
+                } else {
+                    logger.warn("impossible, client disconnected but not in map???")
+                }
+
             }
 
             NoneEvent -> {}
