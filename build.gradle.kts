@@ -1,6 +1,6 @@
 
 
-
+// this project need jdk 22 or later to run
 plugins {
     kotlin("jvm") version "2.2.0"
 }
