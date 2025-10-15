@@ -2,6 +2,8 @@ package magicghostvu.enetffi
 
 import java.nio.ByteBuffer
 
+
+// all class will be value type for reduce allocation cost
 sealed class EnetEvent {
 }
 

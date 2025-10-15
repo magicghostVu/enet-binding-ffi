@@ -221,7 +221,7 @@ object Enet {
         return funcInit.invokeExact() as Int
     }
 
-    fun deinit() {
+    fun deInit() {
         funcDeInit.invokeExact()
     }
 
